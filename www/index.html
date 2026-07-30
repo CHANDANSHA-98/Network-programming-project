@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiniHTTP Server</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="nav">
+    <div class="brand"><span class="dot"></span> MiniHTTP</div>
+    <div class="nav-links">
+        <a href="/" class="active">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/calculator.html">Calculator</a>
+        <a href="/guestbook.html">Guestbook</a>
+        <a href="/admin">Admin</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="hero">
+        <h1>A multi-threaded HTTP server, built from scratch in C</h1>
+        <p>This site is served by a custom HTTP/1.1 server written with the Winsock API —
+           static files, JSON routes, a Basic-Auth admin dashboard, and keep-alive
+           connections, all hand-rolled with sockets and threads.</p>
+    </div>
+
+    <div class="section-title">Live server pulse</div>
+    <div class="grid grid-3" id="pulse">
+        <a class="stat card-link" href="/time.html">
+            <div class="label">Server time</div>
+            <div class="value" id="pulse-time">—</div>
+        </a>
+        <a class="stat card-link" href="/status.html">
+            <div class="label">Uptime</div>
+            <div class="value" id="pulse-uptime">—</div>
+        </a>
+        <a class="stat card-link" href="/status.html">
+            <div class="label">Requests served</div>
+            <div class="value" id="pulse-requests">—</div>
+        </a>
+    </div>
+
+    <div class="section-title">Explore</div>
+    <div class="grid grid-2">
+        <a class="card card-link" href="/about.html">
+            <div class="icon-badge">📄</div>
+            <h3>About this project</h3>
+            <p class="muted">What's implemented under the hood — sockets, threads, routing.</p>
+        </a>
+        <a class="card card-link" href="/calculator.html">
+            <div class="icon-badge">🧮</div>
+            <h3>Server-side calculator</h3>
+            <p class="muted">Sends real requests to <code>/calculate</code> and shows the JSON.</p>
+        </a>
+        <a class="card card-link" href="/guestbook.html">
+            <div class="icon-badge">📝</div>
+            <h3>Guestbook</h3>
+            <p class="muted">POST a message — the C server decodes and saves it to disk.</p>
+        </a>
+        <a class="card card-link" href="/admin">
+            <div class="icon-badge">🛡️</div>
+            <h3>Admin dashboard<span class="tag">Auth</span></h3>
+            <p class="muted">Full server details, visitor log, performance & maintenance status.</p>
+        </a>
+    </div>
+
+    <div class="section-title">Routes</div>
+    <div class="card">
+        <table>
+            <tr><th>Page</th><th>Description</th><th>Raw JSON</th></tr>
+            <tr><td class="mono"><a href="/time.html">/time.html</a></td><td class="muted">Current server time</td><td class="mono"><a href="/time">/time</a></td></tr>
+            <tr><td class="mono"><a href="/status.html">/status.html</a></td><td class="muted">Uptime & request count</td><td class="mono"><a href="/status">/status</a></td></tr>
+            <tr><td class="mono">—</td><td class="muted">Server-side arithmetic</td><td class="mono"><a href="/calculate?a=5&op=add&b=3">/calculate</a></td></tr>
+            <tr><td class="mono"><a href="/missing.html">/missing.html</a></td><td class="muted">404 test page</td><td class="mono">—</td></tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        <span>MiniHTTP Server v3 · C + Winsock</span>
+        <span id="clock-footer">—</span>
+    </div>
+</div>
+
+<script>
+function fmtDuration(sec) {
+    sec = Math.floor(sec);
+    const d = Math.floor(sec / 86400); sec %= 86400;
+    const h = Math.floor(sec / 3600); sec %= 3600;
+    const m = Math.floor(sec / 60); sec %= 60;
+    if (d > 0) return `${d}d ${h}h ${m}m ${sec}s`;
+    if (h > 0) return `${h}h ${m}m ${sec}s`;
+    if (m > 0) return `${m}m ${sec}s`;
+    return `${sec}s`;
+}
+
+async function refreshPulse() {
+    try {
+        const res = await fetch('/status');
+        const data = await res.json();
+        document.getElementById('pulse-uptime').textContent = fmtDuration(data.uptime_seconds);
+        document.getElementById('pulse-requests').textContent = data.total_requests.toLocaleString();
+    } catch (e) { /* server not reachable via this route yet */ }
+}
+
+async function refreshClock() {
+    try {
+        const res = await fetch('/time');
+        const data = await res.json();
+        document.getElementById('pulse-time').textContent = data.server_time.split(' ')[1];
+        document.getElementById('clock-footer').textContent = 'Server time: ' + data.server_time;
+    } catch (e) {}
+}
+
+refreshPulse();
+refreshClock();
+setInterval(refreshClock, 1000);
+setInterval(refreshPulse, 5000);
+</script>
+
+</body>
+</html>

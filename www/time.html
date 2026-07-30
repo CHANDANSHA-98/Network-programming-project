@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Server Time - MiniHTTP</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="nav">
+    <div class="brand"><span class="dot"></span> MiniHTTP</div>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/calculator.html">Calculator</a>
+        <a href="/guestbook.html">Guestbook</a>
+        <a href="/admin">Admin</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="hero">
+        <h1>Server time</h1>
+        <p>Live value from <code>GET /time</code>, ticking every second on your screen
+           and re-synced with the server periodically.</p>
+    </div>
+
+    <div class="card" style="text-align:center; padding:44px 22px;">
+        <div class="mono" style="font-size:3rem; font-weight:700; letter-spacing:1px;" id="clock">—</div>
+        <div class="muted" id="date" style="margin-top:8px; font-size:1.05rem;">—</div>
+    </div>
+
+    <div class="section-title">Raw response</div>
+    <div class="result" id="raw">Fetching /time…</div>
+
+    <div class="footer">
+        <span>MiniHTTP Server v3 · C + Winsock</span>
+        <a href="/">← Back to home</a>
+    </div>
+</div>
+
+<script>
+async function syncTime() {
+    try {
+        const res = await fetch('/time');
+        const data = await res.json();
+        const [datePart, timePart] = data.server_time.split(' ');
+        document.getElementById('clock').textContent = timePart;
+        document.getElementById('date').textContent = datePart;
+        document.getElementById('raw').textContent = JSON.stringify(data, null, 2);
+    } catch (e) {
+        document.getElementById('raw').innerHTML = '<div class="error-box">Could not reach the server.</div>';
+    }
+}
+syncTime();
+setInterval(syncTime, 1000);
+</script>
+
+</body>
+</html>

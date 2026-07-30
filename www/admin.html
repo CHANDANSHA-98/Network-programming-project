@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Dashboard - MiniHTTP</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="nav">
+    <div class="brand"><span class="dot"></span> MiniHTTP <span class="tag">Admin</span></div>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/calculator.html">Calculator</a>
+        <a href="/guestbook.html">Guestbook</a>
+        <a href="/admin" class="active">Admin</a>
+        <a href="/admin/logout" class="btn-secondary" style="padding:8px 14px; border-radius:999px; display:inline-block;">Log out</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="hero" style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+        <div>
+            <h1>Server dashboard</h1>
+            <p>Live status, visitors, and performance for this MiniHTTP instance.
+               Refreshes automatically every 4 seconds.</p>
+        </div>
+        <div id="maint-pill" class="pill good" style="margin-top:6px;">
+            <span class="dot"></span> Checking…
+        </div>
+    </div>
+
+    <div class="section-title">Right now — the "going" clock</div>
+    <div class="grid grid-3">
+        <div class="stat">
+            <div class="label">Server clock</div>
+            <div class="value mono" id="s-clock">—</div>
+            <div class="sub" id="s-clock-date">—</div>
+        </div>
+        <div class="stat">
+            <div class="label">Uptime (live)</div>
+            <div class="value mono" id="s-uptime">—</div>
+            <div class="sub" id="s-started">since —</div>
+        </div>
+        <div class="stat">
+            <div class="label">Active connections</div>
+            <div class="value" id="s-active">—</div>
+            <div class="sub" id="s-peak">peak —</div>
+        </div>
+    </div>
+
+    <div class="section-title">Server performance</div>
+    <div class="grid grid-3">
+        <div class="stat">
+            <div class="label">Total requests</div>
+            <div class="value" id="p-requests">—</div>
+            <div class="sub" id="p-rate">— req/min</div>
+        </div>
+        <div class="stat">
+            <div class="label">Error rate</div>
+            <div class="value" id="p-errors">—</div>
+            <div class="sub" id="p-error-count">— errors total</div>
+        </div>
+        <div class="stat">
+            <div class="label">Memory usage</div>
+            <div class="value" id="p-memory">—</div>
+            <div class="sub">process working set</div>
+        </div>
+    </div>
+
+    <div class="section-title">Maintenance check</div>
+    <div class="card" id="maint-card">
+        <p class="muted" id="maint-detail" style="margin:0">Checking server health…</p>
+        <p class="muted" style="margin:10px 0 0; font-size:0.82rem;">
+            Flags automatically when: error rate &gt; 20%, memory &gt; 150&nbsp;MB,
+            active connections &gt; 50, or the server has run for over a week without a restart.
+        </p>
+    </div>
+
+    <div class="section-title">Who's been here — recent visitors</div>
+    <div class="card">
+        <table id="visitors-table">
+            <thead>
+                <tr><th>Time</th><th>IP</th><th>Method</th><th>Path</th><th>Status</th></tr>
+            </thead>
+            <tbody id="visitors-body">
+                <tr><td colspan="5" class="empty-state">Loading…</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-title">Guestbook submissions</div>
+    <div class="card">
+        <div id="gb-body"><div class="empty-state">Loading…</div></div>
+    </div>
+
+    <div class="footer">
+        <span>MiniHTTP Server v3 · Admin session (Basic Auth)</span>
+        <a href="/">← Back to site</a>
+    </div>
+</div>
+
+<script>
+function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function statusClass(s) {
+    if (s >= 500) return 'status-5xx';
+    if (s >= 400) return 'status-4xx';
+    return 'status-2xx';
+}
+
+async function refreshStatus() {
+    try {
+        const res = await fetch('/admin/api/status');
+        if (res.status === 401) { window.location.href = '/admin/login'; return; }
+        if (!res.ok) throw new Error('request failed');
+        const d = await res.json();
+
+        document.getElementById('s-clock').textContent = d.server_time.split(' ')[1];
+        document.getElementById('s-clock-date').textContent = d.server_time.split(' ')[0];
+        document.getElementById('s-uptime').textContent = d.uptime_formatted;
+        document.getElementById('s-started').textContent = 'since ' + d.start_time;
+        document.getElementById('s-active').textContent = d.active_connections;
+        document.getElementById('s-peak').textContent = 'peak ' + d.peak_connections;
+
+        document.getElementById('p-requests').textContent = d.total_requests.toLocaleString();
+        document.getElementById('p-rate').textContent = d.requests_per_minute.toFixed(1) + ' req/min';
+        document.getElementById('p-errors').textContent = d.error_rate_percent.toFixed(1) + '%';
+        document.getElementById('p-error-count').textContent = d.total_errors + ' errors total';
+        document.getElementById('p-memory').textContent = d.memory_mb.toFixed(1) + ' MB';
+
+        const pill = document.getElementById('maint-pill');
+        const maintCard = document.getElementById('maint-card');
+        const maintDetail = document.getElementById('maint-detail');
+        if (d.maintenance_needed) {
+            pill.className = 'pill bad';
+            pill.innerHTML = '<span class="dot"></span> Maintenance recommended';
+            maintDetail.innerHTML = '<strong style="color:var(--bad)">Action suggested:</strong> ' + escapeHtml(d.maintenance_reason);
+        } else {
+            pill.className = 'pill good';
+            pill.innerHTML = '<span class="dot"></span> Healthy';
+            maintDetail.innerHTML = '<strong style="color:var(--good)">All systems normal.</strong> No maintenance action needed right now.';
+        }
+    } catch (e) {
+        document.getElementById('maint-pill').className = 'pill warn';
+        document.getElementById('maint-pill').innerHTML = '<span class="dot"></span> Connection lost';
+    }
+}
+
+async function refreshVisitors() {
+    const body = document.getElementById('visitors-body');
+    try {
+        const res = await fetch('/admin/api/visitors');
+        const rows = await res.json();
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="5" class="empty-state">No visits recorded yet.</td></tr>';
+            return;
+        }
+        body.innerHTML = rows.map(r => `
+            <tr>
+                <td class="mono">${escapeHtml(r.time)}</td>
+                <td class="mono">${escapeHtml(r.ip)}</td>
+                <td>${escapeHtml(r.method)}</td>
+                <td class="mono">${escapeHtml(r.path)}</td>
+                <td class="mono ${statusClass(r.status)}">${r.status}</td>
+            </tr>`).join('');
+    } catch (e) {
+        body.innerHTML = '<tr><td colspan="5" class="empty-state">Could not load visitor log.</td></tr>';
+    }
+}
+
+async function refreshGuestbook() {
+    const box = document.getElementById('gb-body');
+    try {
+        const res = await fetch('/admin/api/guestbook');
+        const entries = await res.json();
+        if (!entries.length) {
+            box.innerHTML = '<div class="empty-state">No guestbook entries yet.</div>';
+            return;
+        }
+        box.innerHTML = entries.map(e => `
+            <div style="padding:10px 0; border-bottom:1px solid var(--border)">
+                <strong>${escapeHtml(e.name)}</strong>
+                <span class="muted" style="margin-left:6px">${escapeHtml(e.message)}</span>
+            </div>`).join('');
+    } catch (e) {
+        box.innerHTML = '<div class="error-box">Could not load guestbook.</div>';
+    }
+}
+
+function refreshAll() { refreshStatus(); refreshVisitors(); refreshGuestbook(); }
+refreshAll();
+setInterval(refreshAll, 4000);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About - MiniHTTP Server</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="nav">
+    <div class="brand"><span class="dot"></span> MiniHTTP</div>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/about.html" class="active">About</a>
+        <a href="/calculator.html">Calculator</a>
+        <a href="/guestbook.html">Guestbook</a>
+        <a href="/admin">Admin</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="hero">
+        <h1>About this project</h1>
+        <p>MiniHTTP is a lightweight HTTP/1.1 server and client built from scratch in C
+           using the Winsock API on Windows, as a network-programming project.</p>
+    </div>
+
+    <div class="section-title">What's implemented</div>
+    <div class="grid grid-2">
+        <div class="card">
+            <div class="icon-badge">🔌</div>
+            <h3>TCP socket programming</h3>
+            <p class="muted">Manual <code>bind</code>, <code>listen</code>, <code>accept</code> and
+               <code>connect</code> calls over Winsock — no HTTP framework involved.</p>
+        </div>
+        <div class="card">
+            <div class="icon-badge">🧵</div>
+            <h3>Multi-threaded</h3>
+            <p class="muted">One <code>CreateThread</code> per connection, with critical sections
+               guarding the shared log file and stats counters.</p>
+        </div>
+        <div class="card">
+            <div class="icon-badge">📨</div>
+            <h3>HTTP request parsing</h3>
+            <p class="muted">Reads method, path, query string, headers and body by hand,
+               including chunked <code>Content-Length</code> reads for POST.</p>
+        </div>
+        <div class="card">
+            <div class="icon-badge">🗂️</div>
+            <h3>Static file serving</h3>
+            <p class="muted">Serves everything in <code>www/</code> with correct
+               <code>Content-Type</code> headers and basic path-traversal protection.</p>
+        </div>
+        <div class="card">
+            <div class="icon-badge">🔁</div>
+            <h3>Keep-Alive</h3>
+            <p class="muted">Multiple requests per TCP connection, matching real HTTP/1.1
+               client behaviour.</p>
+        </div>
+        <div class="card">
+            <div class="icon-badge">🔐</div>
+            <h3>Basic Auth admin panel</h3>
+            <p class="muted">The <code>/admin</code> route and its JSON APIs decode and verify
+               the <code>Authorization</code> header before serving anything.</p>
+        </div>
+    </div>
+
+    <div class="section-title">Status codes handled</div>
+    <div class="card">
+        <p class="muted" style="margin:0">
+            <code>200 OK</code> &nbsp; <code>400 Bad Request</code> &nbsp;
+            <code>401 Unauthorized</code> &nbsp; <code>403 Forbidden</code> &nbsp;
+            <code>404 Not Found</code> — every response's real status code is written
+            to <code>access.log</code>, which powers the visitor log in the admin dashboard.
+        </p>
+    </div>
+
+    <div class="section-title">Companion tools</div>
+    <div class="card">
+        <p class="muted" style="margin:0">
+            <strong>client.c</strong> — a matching HTTP client that can talk to this server
+            or any real website. <strong>client_loaadtest.c</strong> — a small load-testing
+            client used to sanity-check the server under concurrent connections.
+        </p>
+    </div>
+
+    <div class="footer">
+        <span>MiniHTTP Server v3 · C + Winsock</span>
+        <a href="/">← Back to home</a>
+    </div>
+</div>
+
+</body>
+</html>

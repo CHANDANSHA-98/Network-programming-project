@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Server Status - MiniHTTP</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="nav">
+    <div class="brand"><span class="dot"></span> MiniHTTP</div>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/calculator.html">Calculator</a>
+        <a href="/guestbook.html">Guestbook</a>
+        <a href="/admin">Admin</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="hero">
+        <h1>Server status</h1>
+        <p>Live value from <code>GET /status</code> — public uptime and request-count
+           summary. For full performance details and the visitor log, see the
+           <a href="/admin">admin dashboard</a>.</p>
+    </div>
+
+    <div class="grid grid-3">
+        <div class="stat">
+            <div class="label">Uptime</div>
+            <div class="value" id="s-uptime">—</div>
+        </div>
+        <div class="stat">
+            <div class="label">Total requests</div>
+            <div class="value" id="s-requests">—</div>
+        </div>
+        <div class="stat">
+            <div class="label">Total errors</div>
+            <div class="value" id="s-errors">—</div>
+        </div>
+    </div>
+
+    <div class="section-title">Raw response</div>
+    <div class="result" id="raw">Fetching /status…</div>
+
+    <div class="footer">
+        <span>MiniHTTP Server v3 · C + Winsock</span>
+        <a href="/">← Back to home</a>
+    </div>
+</div>
+
+<script>
+function fmtDuration(sec) {
+    sec = Math.floor(sec);
+    const d = Math.floor(sec / 86400); sec %= 86400;
+    const h = Math.floor(sec / 3600); sec %= 3600;
+    const m = Math.floor(sec / 60); sec %= 60;
+    if (d > 0) return `${d}d ${h}h ${m}m ${sec}s`;
+    if (h > 0) return `${h}h ${m}m ${sec}s`;
+    if (m > 0) return `${m}m ${sec}s`;
+    return `${sec}s`;
+}
+
+async function refresh() {
+    try {
+        const res = await fetch('/status');
+        const data = await res.json();
+        document.getElementById('s-uptime').textContent = fmtDuration(data.uptime_seconds);
+        document.getElementById('s-requests').textContent = data.total_requests.toLocaleString();
+        document.getElementById('s-errors').textContent = data.total_errors.toLocaleString();
+        document.getElementById('raw').textContent = JSON.stringify(data, null, 2);
+    } catch (e) {
+        document.getElementById('raw').innerHTML = '<div class="error-box">Could not reach the server.</div>';
+    }
+}
+refresh();
+setInterval(refresh, 3000);
+</script>
+
+</body>
+</html>

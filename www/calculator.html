@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculator - MiniHTTP</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="nav">
+    <div class="brand"><span class="dot"></span> MiniHTTP</div>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/calculator.html" class="active">Calculator</a>
+        <a href="/guestbook.html">Guestbook</a>
+        <a href="/admin">Admin</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="hero">
+        <h1>Server-side calculator</h1>
+        <p>This sends a real <code>GET /calculate</code> request to the C server — the
+           arithmetic happens on the server, not in your browser, and it returns JSON.</p>
+    </div>
+
+    <div class="grid" style="grid-template-columns: 1.1fr 1fr; align-items:start;">
+        <div class="card">
+            <label for="a">First number</label>
+            <input type="number" step="any" id="a" placeholder="e.g. 12" value="12">
+
+            <label>Operation</label>
+            <div class="op-toggle" id="op-toggle">
+                <button type="button" data-op="add" class="active">+ Add</button>
+                <button type="button" data-op="sub">− Sub</button>
+                <button type="button" data-op="mul">× Mul</button>
+                <button type="button" data-op="div">÷ Div</button>
+            </div>
+
+            <label for="b">Second number</label>
+            <input type="number" step="any" id="b" placeholder="e.g. 4" value="4">
+
+            <button class="btn" id="calc-btn">Calculate <span id="calc-spinner" style="display:none" class="spin"></span></button>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-top:0">Result</h3>
+            <div class="result" id="result">Fill in the form and press Calculate —
+the request goes to /calculate?a=..&op=..&b=.. and the
+JSON response from server.c is shown here.</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <span>MiniHTTP Server v3 · C + Winsock</span>
+        <a href="/">← Back to home</a>
+    </div>
+</div>
+
+<script>
+let selectedOp = 'add';
+const toggle = document.getElementById('op-toggle');
+toggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    [...toggle.children].forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedOp = btn.dataset.op;
+});
+
+const opSymbol = { add: '+', sub: '−', mul: '×', div: '÷' };
+
+async function calculate() {
+    const a = document.getElementById('a').value;
+    const b = document.getElementById('b').value;
+    const resultBox = document.getElementById('result');
+    const spinner = document.getElementById('calc-spinner');
+
+    if (a === '' || b === '') {
+        resultBox.innerHTML = '<div class="error-box">Please fill in both numbers.</div>';
+        return;
+    }
+
+    spinner.style.display = 'inline-block';
+    try {
+        const url = `/calculate?a=${encodeURIComponent(a)}&op=${selectedOp}&b=${encodeURIComponent(b)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+            resultBox.innerHTML = `<div class="error-box">${data.error || 'Request failed'}</div>`;
+        } else {
+            resultBox.innerHTML =
+                `<span class="big">${data.a} ${opSymbol[data.op]} ${data.b} = ${data.result}</span>` +
+                JSON.stringify(data, null, 2);
+        }
+    } catch (e) {
+        resultBox.innerHTML = '<div class="error-box">Could not reach the server. Is server.exe running?</div>';
+    }
+    spinner.style.display = 'none';
+}
+
+document.getElementById('calc-btn').addEventListener('click', calculate);
+[document.getElementById('a'), document.getElementById('b')].forEach(inp =>
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') calculate(); })
+);
+</script>
+
+</body>
+</html>

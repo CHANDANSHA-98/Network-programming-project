@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guestbook - MiniHTTP</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="nav">
+    <div class="brand"><span class="dot"></span> MiniHTTP</div>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/calculator.html">Calculator</a>
+        <a href="/guestbook.html" class="active">Guestbook</a>
+        <a href="/admin">Admin</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="hero">
+        <h1>Guestbook</h1>
+        <p>This form sends a real <code>POST /guestbook</code> request. The server
+           decodes the body and appends it to <code>guestbook.txt</code> on disk.</p>
+    </div>
+
+    <div class="grid" style="grid-template-columns: 1fr 1.2fr; align-items:start;">
+        <div class="card">
+            <form id="gb-form">
+                <label for="name">Your name</label>
+                <input type="text" id="name" name="name" placeholder="Your name" required>
+
+                <label for="message">Message</label>
+                <textarea id="message" name="message" placeholder="Say something nice…" required></textarea>
+
+                <button class="btn" type="submit">Submit</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-top:0">Recent messages</h3>
+            <div id="entries">
+                <div class="empty-state">Loading…</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <span>MiniHTTP Server v3 · C + Winsock</span>
+        <a href="/">← Back to home</a>
+    </div>
+</div>
+
+<script>
+function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadEntries() {
+    const box = document.getElementById('entries');
+    try {
+        const res = await fetch('/guestbook/list');
+        const entries = await res.json();
+        if (!entries.length) {
+            box.innerHTML = '<div class="empty-state">No messages yet — be the first!</div>';
+            return;
+        }
+        box.innerHTML = entries.map(e => `
+            <div style="padding:12px 0; border-bottom:1px solid var(--border)">
+                <strong>${escapeHtml(e.name)}</strong>
+                <p class="muted" style="margin:4px 0 0">${escapeHtml(e.message)}</p>
+            </div>`).join('');
+    } catch (e) {
+        box.innerHTML = '<div class="error-box">Could not load guestbook entries.</div>';
+    }
+}
+
+document.getElementById('gb-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('name').value;
+    const message = document.getElementById('message').value;
+    try {
+        await fetch('/guestbook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `name=${encodeURIComponent(name)}&message=${encodeURIComponent(message)}`
+        });
+        document.getElementById('gb-form').reset();
+        loadEntries();
+    } catch (err) {
+        alert('Could not submit — is the server running?');
+    }
+});
+
+loadEntries();
+</script>
+
+</body>
+</html>

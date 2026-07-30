@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Login - MiniHTTP</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="nav">
+    <div class="brand"><span class="dot"></span> MiniHTTP</div>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/calculator.html">Calculator</a>
+        <a href="/guestbook.html">Guestbook</a>
+    </div>
+</div>
+
+<div class="wrap" style="max-width:420px;">
+    <div class="hero" style="text-align:center;">
+        <h1>Admin login</h1>
+        <p style="margin:0 auto;">Sign in to view server details, visitors and performance.</p>
+    </div>
+
+    <div class="card">
+        <form id="login-form">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="admin" required autofocus>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="••••••" required>
+
+            <button class="btn" type="submit" style="width:100%; justify-content:center;">Log in</button>
+        </form>
+        <div id="login-error" class="error-box" style="display:none;">Incorrect username or password.</div>
+    </div>
+
+    <div class="footer" style="justify-content:center;">
+        <a href="/">← Back to home</a>
+    </div>
+</div>
+
+<script>
+/* Show the error box if we were bounced back here with ?error=1 */
+if (new URLSearchParams(window.location.search).get('error') === '1') {
+    document.getElementById('login-error').style.display = 'block';
+}
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    const res = await fetch('/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
+        redirect: 'manual' /* the server responds 302; we just re-check location ourselves */
+    });
+
+    /* With redirect:'manual' the browser gives us an opaque response, so instead
+       of trying to read it, just check where we should be by re-fetching /admin. */
+    const check = await fetch('/admin/api/status');
+    if (check.status === 200) {
+        window.location.href = '/admin';
+    } else {
+        document.getElementById('login-error').style.display = 'block';
+    }
+});
+</script>
+
+</body>
+</html>
